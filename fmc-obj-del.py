@@ -76,6 +76,8 @@ while True:
 
 url = "https://%s/api/fmc_platform/v1/auth/generatetoken" % ipaddr
 
+results=[]
+
 headers = {
     'cache-control': "no-cache",
     'postman-token': "ff30c506-4739-9d4d-2e53-0dc7efc2036a"
@@ -98,21 +100,38 @@ headers = {
 
 # get all objects type based in user reponse from FMC 
 response = requests.request("GET", url, headers=headers, params=querystring, verify=False)
+results=[]
+raw = response.json()
+offset = 0
 
-# format response in JSON format 
-data = response.json()
+if raw['paging']['pages'] == 0:
+    for pages in range(p):
+        querystring = {"offset":"%d" % offset,"limit":"1000"}
+        response = requests.request("GET", url, headers=headers, params=querystring, verify=False)
+        offset += 1000
+        raw=response.json()
+        #print [raw[i] for i in raw.keys()]
+        #print raw['items'][1]['name']
+        #print [raw[i][0][0].get('name') for i in raw.keys()]
+        for i in raw['items']:  
+            results.append(i)
 
-p=data['paging']['pages']
-
-offset= 1000
-
-# FMC get all objects for user specified type
-for pages in [p]:
-    querystring = {"offset":"%d" % offset,"limit":"1000"}
-    response = requests.request("GET", url, headers=headers, params=querystring, verify=False)
-    offset += 1000
-    raw=response.json()
-    data['items'].append(raw['items'])
+else:
+    p=raw['paging']['pages']
+    # FMC get all objects for user specified type
+    for pages in range(p):
+        querystring = {"offset":"%d" % offset,"limit":"1000"}
+        response = requests.request("GET", url, headers=headers, params=querystring, verify=False)
+        offset += 1000
+        raw=response.json()
+        #print [raw[i] for i in raw.keys()]
+        #print raw['items'][1]['name']
+        #print [raw[i][0][0].get('name') for i in raw.keys()]
+        for i in raw['items']:  
+            results.append(i)
+#test of results link
+#for i in results:
+#   print i['links']['self']
 
 def delobj(obj):
 
@@ -122,10 +141,8 @@ def delobj(obj):
     global user1
     global pass1
     netdel = response 
-
-    if 'items' in obj:
         
-        for id in obj['items']:
+    for id in obj:
             
             #Sends a delete http for all network objects, but only deletes unused objects
 
@@ -152,9 +169,9 @@ def delobj(obj):
                 }  
                 
                 netdel.status_code = 200
-                
 
 
 
-delobj(data)
+
+delobj(results)
 
