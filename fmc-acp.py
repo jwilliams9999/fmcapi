@@ -21,7 +21,7 @@ requests_log.setLevel(logging.INFO)
 requests_log.propagate = True
 
 results=[]
-ipaddr = ""
+ipaddr = "192.168.16.150"
 user1="api"
 pass1=""
 querystring = {"limit":"1000"}
@@ -74,7 +74,7 @@ for i in raw['items']:
 	results.append(i['links']['self'])
 number=1
 
-target = open('rules.csv', 'w')
+#target = open('rules.csv', 'w')
 
 for i in results:
 	response = requests.request("GET", i, headers=headers, verify=False)
@@ -85,34 +85,47 @@ for i in results:
 	raw.setdefault('destinationNetworks', "any-dest")
 	raw.setdefault('sourcePorts', "any-src-port")
 	raw.setdefault('destinationPorts', "any-dest-port")
-	interesting_keys = ('name', 'action', 'sourceNetworks', 'sourcePorts', 'destinationNetworks', 'destinationPorts' )
+	raw.setdefault('sourceZones', "any-src-zn")
+	raw.setdefault('destinationZones', "any-dst-zn")
+	interesting_keys = ('name', 'action','sourceZones', 'sourceNetworks', 'sourcePorts', 'destinationZones', 'destinationNetworks', 'destinationPorts' )
 	subdict = {x: raw.get(x, "any") for x in interesting_keys if x in raw}
 	
+	if 'objects' in subdict['sourceZones']:
+		srczn = subdict['sourceZones']['objects'][0]['name']
+	else :
+		srczn = subdict['sourceZones']
+
 	if 'objects' in subdict['sourceNetworks']:
 		srcnet = subdict['sourceNetworks']['objects'][0]['name']
 	else :
-		srcnet = "any-src"
-	
+		srcnet = subdict['sourceNetworks']
+
+	if 'objects' in subdict['destinationZones']:
+		dstzn = subdict['destinationZones']['objects'][0]['name']
+	else :
+		srczn = subdict['destinationZones']
+
 	if 'objects' in subdict['destinationNetworks']:
 		dstnet = subdict['destinationNetworks']['objects'][0]['name']
 	else :
-		dstnet = "any-dst"
+		dstnet = subdict['destinationNetworks']
 		
 	if 'objects' in subdict['sourcePorts']:
 		srcprt = subdict['sourcePorts']['objects'][0]['name']
 	else :
-		srcprt = "any-src-port"
+		srcprt = subdict['sourcePorts']
 		
 	if 'objects' in subdict['destinationPorts']:
 		dstprt = subdict['destinationPorts']['objects'][0]['name']
 	else :
-		dstprt = "any-dest-port"
-
-	print >> target, "%d,%s,%s,%s,%s,%s,%s" %(number, subdict['name'],subdict['action'],srcnet,srcprt,dstnet,dstprt)
+		dstprt = subdict['destinationPorts']
+	
+	#print >> target, "%d,%s,%s,%s,%s,%s,%s" %(number, subdict['id'], subdict['name'],subdict['action'],srcnet,srcprt,dstnet,dstprt)
+	print "%d,%s,%s,%s,%s,%s,%s,%s,%s" %(number, subdict['name'],subdict['action'],srczn,srcnet,srcprt,dstzn,dstnet,dstprt)
 	number+=1
 	time.sleep(.5)
 
-target.close()
+#target.close()
 
 
 
