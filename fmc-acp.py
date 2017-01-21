@@ -21,9 +21,9 @@ requests_log.setLevel(logging.INFO)
 requests_log.propagate = True
 
 results=[]
-ipaddr = "192.168.16.150"
+ipaddr = "129.207.99.51"
 user1="api"
-pass1=""
+pass1= raw_input("Enter your FMC password: ")
 querystring = {"limit":"1000"}
 headers = {
     'cache-control': "no-cache",
@@ -74,8 +74,8 @@ for i in raw['items']:
 	results.append(i['links']['self'])
 number=1
 
-#target = open('rules.csv', 'w')
-
+target = open('rules.csv', 'w')
+print >> target, "ID, Name, Action, Source Zone, Source Network, Source Port, Destination Zone, Destination Network, Destination Port"
 for i in results:
 	response = requests.request("GET", i, headers=headers, verify=False)
 	raw=response.json()
@@ -92,40 +92,55 @@ for i in results:
 	
 	if 'objects' in subdict['sourceZones']:
 		srczn = subdict['sourceZones']['objects'][0]['name']
+	elif 'literals' in subdict['sourceZones']:
+		srczn = subdict['sourceZones']['literals'][0]['port']
 	else :
 		srczn = subdict['sourceZones']
 
 	if 'objects' in subdict['sourceNetworks']:
 		srcnet = subdict['sourceNetworks']['objects'][0]['name']
+	elif 'literals' in subdict['sourceNetworks']:
+		srcnet = subdict['sourceNetworks']['literals'][0]['value']
 	else :
 		srcnet = subdict['sourceNetworks']
 
+	if 'objects' in subdict['sourcePorts']:
+		srcprt = subdict['sourcePorts']['objects'][0]['name']
+	elif 'literals' in subdict['sourcePorts']:
+		srcprt = subdict['sourcePorts']['literals'][0]['port']
+	else :
+		srcprt = subdict['sourcePorts']
+
 	if 'objects' in subdict['destinationZones']:
 		dstzn = subdict['destinationZones']['objects'][0]['name']
+	elif 'literals' in subdict['destinationZones']:
+		dstzn = subdict['destinationZones']['literals'][0]['port']
 	else :
-		srczn = subdict['destinationZones']
+		dstzn = subdict['destinationZones']
 
 	if 'objects' in subdict['destinationNetworks']:
 		dstnet = subdict['destinationNetworks']['objects'][0]['name']
+	elif 'literals' in subdict['destinationNetworks']:
+		dstnet = subdict['destinationNetworks']['literals'][0]['value']
 	else :
 		dstnet = subdict['destinationNetworks']
 		
-	if 'objects' in subdict['sourcePorts']:
-		srcprt = subdict['sourcePorts']['objects'][0]['name']
-	else :
-		srcprt = subdict['sourcePorts']
-		
 	if 'objects' in subdict['destinationPorts']:
 		dstprt = subdict['destinationPorts']['objects'][0]['name']
+	elif 'literals' in subdict['destinationPorts']:
+		try:
+			dstprt = subdict['destinationPorts']['literals'][0]['port']
+		except KeyError:
+			dstprt = "0"
 	else :
 		dstprt = subdict['destinationPorts']
-	
-	#print >> target, "%d,%s,%s,%s,%s,%s,%s" %(number, subdict['id'], subdict['name'],subdict['action'],srcnet,srcprt,dstnet,dstprt)
-	print "%d,%s,%s,%s,%s,%s,%s,%s,%s" %(number, subdict['name'],subdict['action'],srczn,srcnet,srcprt,dstzn,dstnet,dstprt)
+
+	print >> target, "%d,%s,%s,%s,%s,%s,%s,%s,%s" %(number, subdict['name'],subdict['action'],srczn,srcnet,srcprt,dstzn,dstnet,dstprt)
+	#print "%d,%s,%s,%s,%s,%s,%s,%s,%s" %(number, subdict['name'],subdict['action'],srczn,srcnet,srcprt,dstzn,dstnet,dstprt)
 	number+=1
 	time.sleep(.5)
 
-#target.close()
+target.close()
 
 
 
