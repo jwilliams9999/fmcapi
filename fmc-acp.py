@@ -21,7 +21,7 @@ requests_log.setLevel(logging.INFO)
 requests_log.propagate = True
 
 results=[]
-ipaddr = "129.207.99.51"
+ipaddr = "192.168.16.150"
 user1="api"
 pass1= raw_input("Enter your FMC password: ")
 querystring = {"limit":"1000"}
@@ -69,13 +69,25 @@ response = requests.request("GET", url, headers=headers, params=querystring, ver
 
 raw = response.json()
 
-
 for i in raw['items']:  
 	results.append(i['links']['self'])
 number=1
 
+def getSubdictData(subdict, fieldname, prop2):
+    if 'objects' in subdict[fieldname]:
+        return subdict[fieldname]['objects'][0]['name']
+    elif 'literals' in subdict[fieldname]:
+        if prop2 in subdict[fieldname]['literals'][0]:
+            return subdict[fieldname]['literals'][0][prop2]
+        else:
+            return "0"
+    else :
+        return subdict[fieldname]
+
 target = open('rules.csv', 'w')
+
 print >> target, "ID, Name, Action, Source Zone, Source Network, Source Port, Destination Zone, Destination Network, Destination Port"
+
 for i in results:
 	response = requests.request("GET", i, headers=headers, verify=False)
 	raw=response.json()
@@ -90,50 +102,12 @@ for i in results:
 	interesting_keys = ('name', 'action','sourceZones', 'sourceNetworks', 'sourcePorts', 'destinationZones', 'destinationNetworks', 'destinationPorts' )
 	subdict = {x: raw.get(x, "any") for x in interesting_keys if x in raw}
 	
-	if 'objects' in subdict['sourceZones']:
-		srczn = subdict['sourceZones']['objects'][0]['name']
-	elif 'literals' in subdict['sourceZones']:
-		srczn = subdict['sourceZones']['literals'][0]['port']
-	else :
-		srczn = subdict['sourceZones']
-
-	if 'objects' in subdict['sourceNetworks']:
-		srcnet = subdict['sourceNetworks']['objects'][0]['name']
-	elif 'literals' in subdict['sourceNetworks']:
-		srcnet = subdict['sourceNetworks']['literals'][0]['value']
-	else :
-		srcnet = subdict['sourceNetworks']
-
-	if 'objects' in subdict['sourcePorts']:
-		srcprt = subdict['sourcePorts']['objects'][0]['name']
-	elif 'literals' in subdict['sourcePorts']:
-		srcprt = subdict['sourcePorts']['literals'][0]['port']
-	else :
-		srcprt = subdict['sourcePorts']
-
-	if 'objects' in subdict['destinationZones']:
-		dstzn = subdict['destinationZones']['objects'][0]['name']
-	elif 'literals' in subdict['destinationZones']:
-		dstzn = subdict['destinationZones']['literals'][0]['port']
-	else :
-		dstzn = subdict['destinationZones']
-
-	if 'objects' in subdict['destinationNetworks']:
-		dstnet = subdict['destinationNetworks']['objects'][0]['name']
-	elif 'literals' in subdict['destinationNetworks']:
-		dstnet = subdict['destinationNetworks']['literals'][0]['value']
-	else :
-		dstnet = subdict['destinationNetworks']
-		
-	if 'objects' in subdict['destinationPorts']:
-		dstprt = subdict['destinationPorts']['objects'][0]['name']
-	elif 'literals' in subdict['destinationPorts']:
-		try:
-			dstprt = subdict['destinationPorts']['literals'][0]['port']
-		except KeyError:
-			dstprt = "0"
-	else :
-		dstprt = subdict['destinationPorts']
+	srczn = getSubdictData(subdict, 'sourceZones', 'port')
+	srcnet = getSubdictData(subdict, 'sourceNetworks', 'value')
+	srcprt = getSubdictData(subdict, 'sourcePorts', 'port')
+	dstzn = getSubdictData(subdict, 'destinationZones', 'port')
+	dstnet = getSubdictData(subdict, 'destinationNetworks', 'value')
+	dstprt = getSubdictData(subdict, 'destinationPorts', 'port')
 
 	print >> target, "%d,%s,%s,%s,%s,%s,%s,%s,%s" %(number, subdict['name'],subdict['action'],srczn,srcnet,srcprt,dstzn,dstnet,dstprt)
 	#print "%d,%s,%s,%s,%s,%s,%s,%s,%s" %(number, subdict['name'],subdict['action'],srczn,srcnet,srcprt,dstzn,dstnet,dstprt)
