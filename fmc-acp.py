@@ -22,7 +22,7 @@ requests_log.propagate = True
 
 results=[]
 ipaddr = raw_input("Enter your FMC IP address or hostname: ")
-user1="api"
+user1= raw_input("Enter your FMC username: ")
 pass1= raw_input("Enter your FMC password: ")
 querystring = {"limit":"1000"}
 headers = {
@@ -90,7 +90,7 @@ print >> target, "ID, Name, Action, Source Zone, Source Network, Source Port, De
 
 for i in results:
 	response = requests.request("GET", i, headers=headers, verify=False)
-	raw=response.json()
+	raw=json.loads(response.text)
 	raw.setdefault('name', "noname_rule")
 	raw.setdefault('action', "no_action")
 	raw.setdefault('sourceNetworks', "any-src")
