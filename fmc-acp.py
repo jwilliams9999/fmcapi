@@ -21,7 +21,7 @@ requests_log.setLevel(logging.INFO)
 requests_log.propagate = True
 
 results=[]
-ipaddr = "192.168.16.150"
+ipaddr = raw_input("Enter your FMC IP address or hostname: ")
 user1="api"
 pass1= raw_input("Enter your FMC password: ")
 querystring = {"limit":"1000"}
